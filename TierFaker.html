@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TierFaker</title>
+    <style>
+        body {
+            margin: 0 auto;
+            max-width: 60rem;
+            background-color: #111;
+            color: #eee;
+        }
+
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem;
+            gap: 1rem;
+        }
+
+        #logo {
+            display: inline-grid;
+            --square-size: 10px;
+            gap: 2px;
+            grid-template-columns: repeat(5, var(--square-size));
+            grid-template-rows: repeat(5, var(--square-size));
+        }
+
+        #logo div {
+            border-radius: 2px;
+        }
+
+        #logo div.blank {
+            background-color: gray;
+        }
+
+        #logo> :nth-child(5n+1) {
+            background-color: red;
+        }
+
+        #logo> :nth-child(5n+2) {
+            background-color: orange;
+        }
+
+        #logo> :nth-child(5n+3) {
+            background-color: yellow;
+        }
+
+        #logo> :nth-child(5n+4) {
+            background-color: forestgreen;
+        }
+
+        #logo> :nth-child(5n+5) {
+            background-color: #3333ff;
+        }
+
+        #title {
+            line-height: 1.2rem;
+        }
+
+        .subtitle {
+            font-size: 0.6rem;
+            font-weight: normal;
+            padding-inline-start: 0.25em;
+        }
+
+        .tier {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .tierName {
+            min-width: 5rem;
+            min-height: 5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: black;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .tierBucket {
+            flex-grow: 1;
+            border: 1px solid black;
+            min-height: 100px;
+        }
+
+        .tierBucket img {
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div id="logo">
+            <div class="blank"></div>
+            <div class="blank"></div>
+            <div></div>
+            <div class="blank"></div>
+            <div class="blank"></div>
+            <div class="blank"></div>
+            <div class="blank"></div>
+            <div></div>
+            <div class="blank"></div>
+            <div class="blank"></div>
+            <div class="blank"></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <h1 id="title">LocalTierMaker<br><span class="subtitle">Because fuck your TOS</span></h1>
+    </header>
+
+    <section id="tiers"></section>
+
+    <section id="addFiles">
+        <p>Add files: <small>(and make sure they're square)</p>
+        <input type="file" id="file" multiple>
+    </section>
+
+    <section id="fileList"></section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            var files = [];
+
+            document.getElementById('file').addEventListener('change', function () {
+                var newFiles = this.files;
+                for (var i = 0; i < newFiles.length; i++) {
+                    files.push(newFiles[i]);
+                }
+                var fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var img = document.createElement('img');
+                    img.id = "img_" + i;
+                    img.src = URL.createObjectURL(file);
+                    img.width = 64;
+                    img.height = 64;
+                    img.draggable = true;
+                    img.addEventListener('dragstart', handleDragStart);
+                    img.addEventListener('dragend', handleDragEnd);
+                    fileList.appendChild(img);
+                }
+            });
+
+            var tiers = [
+                {
+                    tierName: 'S',
+                    color: 'red',
+                    files: []
+                },
+                {
+                    tierName: 'A',
+                    color: 'orange',
+                    files: []
+                },
+                {
+                    tierName: 'B',
+                    color: 'yellow',
+                    files: []
+                },
+                {
+                    tierName: 'C',
+                    color: 'forestgreen',
+                    files: []
+                },
+                {
+                    tierName: 'D',
+                    color: '#3333ff',
+                    files: []
+                }
+
+            ];
+
+            var tiersSection = document.getElementById('tiers');
+            for (var i = 0; i < tiers.length; i++) {
+                var tier = tiers[i];
+                var tierRow = document.createElement('div');
+                tierRow.classList.add('tier');
+                var tierName = document.createElement('div');
+                tierName.classList.add('tierName');
+                tierName.style.backgroundColor = tier.color;
+                tierName.innerText = tier.tierName;
+                tierRow.appendChild(tierName);
+                var tierBucket = document.createElement('div');
+                tierBucket.classList.add('tierBucket');
+                tierBucket.addEventListener('dragover', handleDragOver);
+                tierBucket.addEventListener('drop', handleDrop);
+                tierRow.appendChild(tierBucket);
+                tiersSection.appendChild(tierRow);
+            }
+
+            function handleDragStart(event) {
+                event.dataTransfer.setData('text/plain', event.target.id);
+
+                var dragIcon = document.createElement('img');
+                dragIcon.src = event.target.src;
+                dragIcon.width = event.target.width;
+                dragIcon.height = event.target.height;
+
+                // We have to add to the DOM beforehand for sizing, otherwise it won't render properly
+                dragIcon.style.position = 'absolute';
+                dragIcon.style.top = '-9999px';
+                document.body.appendChild(dragIcon);
+
+                event.dataTransfer.setDragImage(dragIcon, dragIcon.width / 2, dragIcon.height / 2);
+
+                // Set the original image opacity to 50% during the drag.
+                event.target.style.opacity = '0.5';
+
+                // Remove the dragIcon from the DOM after the drag starts.
+                setTimeout(() => {
+                    document.body.removeChild(dragIcon);
+                }, 0);
+            }
+
+            function handleDragEnd(event) {
+                event.target.style.opacity = '1'; // Restore the original opacity.
+            }
+
+            function handleDragOver(event) {
+                event.preventDefault();
+            }
+
+            function handleDrop(event) {
+                event.preventDefault();
+                var imgId = event.dataTransfer.getData('text/plain');
+                var img = document.getElementById(imgId);
+                event.target.appendChild(img);
+            }
+        });
+    </script>
+</body>
+
+</html>
